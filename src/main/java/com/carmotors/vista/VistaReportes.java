@@ -1,5 +1,7 @@
 package com.carmotors.vista;
 
+import com.carmotors.excepcion.ExportacionException;
+import java.nio.file.Path;
 import com.carmotors.controlador.ReporteController;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.FilaReporteDTO;
@@ -59,7 +61,10 @@ public final class VistaReportes {
         };
         try {
             ReporteDTO reporte = controlador.generar(tipo, inicio, fin, orden);
+
             imprimir(reporte);
+
+            exportarReporte(reporte);
         } catch (ValidacionException | IllegalArgumentException | IllegalStateException error) {
             consola.mostrar("Error: " + error.getMessage());
         } catch (RuntimeException error) {
@@ -94,5 +99,35 @@ public final class VistaReportes {
         // El total solo suma magnitudes homogéneas del mismo reporte.
         long total = reporte.filas().stream().mapToLong(FilaReporteDTO::cantidad).sum();
         consola.mostrar("Total de " + unidad + ": " + total);
+    }
+    private void exportarReporte(ReporteDTO reporte) {
+
+        boolean confirmar = consola.confirmar(
+                "¿Deseas exportar el reporte en formato TXT?"
+        );
+
+        if (!confirmar) {
+            return;
+        }
+
+        try {
+
+            Path directorio = Path.of("reportes");
+
+            Path archivo = controlador.exportar(
+                    reporte,
+                    directorio
+            );
+
+            consola.mostrar("[OK] Reporte exportado correctamente.");
+
+            consola.mostrar("Archivo guardado en:");
+
+            consola.mostrar(archivo.toString());
+
+        } catch (ExportacionException e) {
+
+            consola.mostrar("[ERROR] " + e.getMessage());
+        }
     }
 }
